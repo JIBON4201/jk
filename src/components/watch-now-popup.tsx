@@ -182,18 +182,14 @@ export function WatchNowPopup({ open, onClose, redirectUrl }: WatchNowPopupProps
                   </div>
 
                   {/* Proceed button */}
-                  <button
+                  <Button
                     onClick={handleProceed}
-                    className="mt-6 w-full"
+                    size="lg"
+                    className="mt-6 animate-glow w-full rounded-xl bg-gradient-to-r from-rose-500 to-violet-500 px-6 text-base font-semibold text-white hover:from-rose-600 hover:to-violet-600 transition-all duration-300"
                   >
-                    <Button
-                      size="lg"
-                      className="animate-glow w-full rounded-xl bg-gradient-to-r from-rose-500 to-violet-500 px-6 text-base font-semibold text-white hover:from-rose-600 hover:to-violet-600 transition-all duration-300"
-                    >
-                      I Am 18+ — Enter Now
-                      <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
-                    </Button>
-                  </button>
+                    I Am 18+ — Enter Now
+                    <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
+                  </Button>
 
                   <p className="mt-4 text-[11px] text-muted-foreground/60">
                     By entering, you agree to our Terms of Service and confirm you are
@@ -319,16 +315,15 @@ export function WatchNowPopup({ open, onClose, redirectUrl }: WatchNowPopupProps
                   {/* Footer CTA */}
                   <div className="border-t border-white/5 px-4 py-4 sm:px-6">
                     {phase === "ready" ? (
-                      <button onClick={handleContinue} className="w-full">
-                        <Button
-                          size="lg"
-                          className="animate-glow w-full rounded-xl bg-gradient-to-r from-rose-500 to-violet-500 px-6 text-base font-semibold text-white hover:from-rose-600 hover:to-violet-600 transition-all duration-300"
-                        >
-                          <Play className="mr-2 h-5 w-5 fill-white" aria-hidden="true" />
-                          Continue Watching
-                          <ExternalLink className="ml-2 h-4 w-4" aria-hidden="true" />
-                        </Button>
-                      </button>
+                      <Button
+                        onClick={handleContinue}
+                        size="lg"
+                        className="animate-glow w-full rounded-xl bg-gradient-to-r from-rose-500 to-violet-500 px-6 text-base font-semibold text-white hover:from-rose-600 hover:to-violet-600 transition-all duration-300"
+                      >
+                        <Play className="mr-2 h-5 w-5 fill-white" aria-hidden="true" />
+                        Continue Watching
+                        <ExternalLink className="ml-2 h-4 w-4" aria-hidden="true" />
+                      </Button>
                     ) : (
                       <Button
                         size="lg"
