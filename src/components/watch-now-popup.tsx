@@ -12,36 +12,46 @@ import {
   Loader2,
   ArrowRight,
   Lock,
+  Monitor,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { AD_CONFIG } from "@/lib/ad-config";
 
 /* ════════════════════════════════════════════════════════════════
-   WATCH NOW POPUP
-   Multi-step flow: Age Gate → Ad Interstitial (5s countdown) → Continue CTA
+   WATCH NOW POPUP — AD-MONETIZED VERSION
+   Multi-step funnel:
+     Step 1: Age Verification Gate
+     Step 2: Ad Interstitial (5s countdown with ad slots)
+     Step 3: Fake "Loading video..." screen (2.5s) → Smartlink redirect
    
    Props:
    - open: boolean to show/hide popup
    - onClose: callback when popup is dismissed
-   - redirectUrl: external URL to redirect to after CTA click
    
    Ad Network Integration:
    Replace the placeholder <div className="popup-ad-slot"> elements
-   with your real ad network code (PropellerAds, TrafficStars, Exoclick, etc.)
+   with your real ad network code (Adsterra, PropellerAds, etc.)
    ════════════════════════════════════════════════════════════════ */
 
 interface WatchNowPopupProps {
   open: boolean;
   onClose: () => void;
-  redirectUrl: string;
+  /** @deprecated Use AD_CONFIG.adsterra.smartlinkUrl instead */
+  redirectUrl?: string;
 }
 
 const COUNTDOWN_SECONDS = 5;
+const LOADING_DURATION = AD_CONFIG.behavior.loadingScreenDuration;
 
-export function WatchNowPopup({ open, onClose, redirectUrl }: WatchNowPopupProps) {
+type PopupPhase = "loading" | "ads" | "ready" | "redirecting";
+
+export function WatchNowPopup({ open, onClose }: WatchNowPopupProps) {
   const [proceeded, setProceeded] = useState(false);
   const [countdown, setCountdown] = useState(COUNTDOWN_SECONDS);
-  const [phase, setPhase] = useState<"loading" | "ads" | "ready">("loading");
+  const [phase, setPhase] = useState<PopupPhase>("loading");
+  const [loadingProgress, setLoadingProgress] = useState(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const redirectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Lock body scroll when popup is open
   useEffect(() => {
@@ -56,13 +66,11 @@ export function WatchNowPopup({ open, onClose, redirectUrl }: WatchNowPopupProps
   }, [open]);
 
   // NOTE: State is reset via `key` prop in parent component (page.tsx)
-  // Each time the popup opens, it receives a new key and remounts with fresh state.
 
   // Countdown timer after proceeding past age gate
   useEffect(() => {
     if (!proceeded) return;
 
-    // Loading phase — simulate ad loading
     const loadingTimeout = setTimeout(() => {
       setPhase("ads");
     }, 800);
@@ -93,26 +101,62 @@ export function WatchNowPopup({ open, onClose, redirectUrl }: WatchNowPopupProps
     setProceeded(true);
   }, []);
 
+  /* ── SMARTLINK REDIRECT WITH FAKE LOADING ── */
   const handleContinue = useCallback(() => {
-    window.open(redirectUrl, "_blank", "noopener,noreferrer");
-    onClose();
-  }, [redirectUrl, onClose]);
+    // Transition to fake loading screen
+    setPhase("redirecting");
+    setLoadingProgress(0);
+
+    // Animate loading progress bar
+    const progressInterval = setInterval(() => {
+      setLoadingProgress((prev) => {
+        if (prev >= 90) {
+          clearInterval(progressInterval);
+          return 90;
+        }
+        return prev + Math.random() * 15 + 5;
+      });
+    }, 200);
+
+    // After loading duration, redirect to smartlink
+    redirectTimerRef.current = setTimeout(() => {
+      clearInterval(progressInterval);
+      setLoadingProgress(100);
+
+      const smartlinkUrl = AD_CONFIG.adsterra.smartlinkUrl;
+      if (smartlinkUrl) {
+        window.open(smartlinkUrl, "_blank", "noopener,noreferrer");
+      }
+
+      // Small delay for the 100% to render, then close
+      setTimeout(() => {
+        onClose();
+      }, 300);
+    }, LOADING_DURATION);
+  }, [onClose]);
+
+  // Cleanup redirect timer on unmount
+  useEffect(() => {
+    return () => {
+      if (redirectTimerRef.current) clearTimeout(redirectTimerRef.current);
+    };
+  }, []);
 
   const handleClose = useCallback(() => {
-    if (!proceeded) return; // Cannot close during age gate
+    if (!proceeded || phase === "redirecting") return;
     onClose();
-  }, [proceeded, onClose]);
+  }, [proceeded, phase, onClose]);
 
-  // ESC key to close (only after age gate)
+  // ESC key to close (only after age gate, not during redirect)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && proceeded) {
+      if (e.key === "Escape" && proceeded && phase !== "redirecting") {
         handleClose();
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [proceeded, handleClose]);
+  }, [proceeded, phase, handleClose]);
 
   return (
     <AnimatePresence>
@@ -125,7 +169,7 @@ export function WatchNowPopup({ open, onClose, redirectUrl }: WatchNowPopupProps
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
             className="fixed inset-0 z-[200] bg-black/80 backdrop-blur-sm"
-            onClick={proceeded ? handleClose : undefined}
+            onClick={proceeded && phase !== "redirecting" ? handleClose : undefined}
             aria-hidden="true"
           />
 
@@ -194,6 +238,66 @@ export function WatchNowPopup({ open, onClose, redirectUrl }: WatchNowPopupProps
                   <p className="mt-4 text-[11px] text-muted-foreground/60">
                     By entering, you agree to our Terms of Service and confirm you are
                     at least 18 years old.
+                  </p>
+                </motion.div>
+              ) : phase === "redirecting" ? (
+                /* ════════════════════════════════════════════════════
+                   STEP 3: FAKE LOADING SCREEN (conversion boost)
+                   Shows "Loading video..." with progress bar for 2.5s
+                   then redirects to Adsterra smartlink
+                   ════════════════════════════════════════════════════ */
+                <motion.div
+                  key="loading-screen"
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  transition={{ duration: 0.3 }}
+                  className="glass-card relative w-full max-w-md rounded-2xl border border-white/10 p-8 text-center"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {/* Spinning loader */}
+                  <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-rose-500/20 to-violet-500/20">
+                    <div className="relative">
+                      <Loader2 className="h-10 w-10 animate-spin text-rose-400" aria-hidden="true" />
+                      <Play className="absolute inset-0 m-auto h-4 w-4 fill-white text-white" aria-hidden="true" />
+                    </div>
+                  </div>
+
+                  <h2 className="text-lg font-bold sm:text-xl">
+                    Loading Video…
+                  </h2>
+
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    Connecting to secure encrypted stream
+                  </p>
+
+                  {/* Progress bar */}
+                  <div className="mt-6 h-1.5 w-full overflow-hidden rounded-full bg-white/10">
+                    <motion.div
+                      className="h-full rounded-full bg-gradient-to-r from-rose-500 to-violet-500"
+                      animate={{ width: `${Math.min(loadingProgress, 100)}%` }}
+                      transition={{ duration: 0.3, ease: "easeOut" }}
+                    />
+                  </div>
+
+                  {/* Loading details */}
+                  <div className="mt-4 flex items-center justify-center gap-4 text-[11px] text-muted-foreground/60">
+                    <span className="flex items-center gap-1">
+                      <Monitor className="h-3 w-3" aria-hidden="true" />
+                      HD 1080p
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <Shield className="h-3 w-3" aria-hidden="true" />
+                      Encrypted
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <Lock className="h-3 w-3" aria-hidden="true" />
+                      Secure
+                    </span>
+                  </div>
+
+                  <p className="mt-4 text-[11px] text-muted-foreground/40">
+                    Please wait while we prepare your content…
                   </p>
                 </motion.div>
               ) : (
@@ -371,12 +475,10 @@ function PopupAdSlot({
   const [show, setShow] = useState(false);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Use a callback pattern — only setState in async callbacks, never synchronously
   useEffect(() => {
     if (visible) {
       timeoutRef.current = setTimeout(() => setShow(true), 200);
     } else {
-      // Use a microtask to avoid synchronous setState warning
       timeoutRef.current = setTimeout(() => setShow(false), 0);
     }
     return () => {
@@ -411,17 +513,10 @@ function PopupAdSlot({
         ╔═══════════════════════════════════════════════════════╗
         ║  REPLACE THIS CONTENT WITH YOUR REAL AD CODE          ║
         ║                                                       ║
-        ║  Example — PropellerAds / TrafficStars / Exoclick:    ║
-        ║  <script src="//ad-network.com/tag.js" />             ║
-        ║                                                       ║
-        ║  Example — Popunder:                                  ║
-        ║  <script src="//ad-network.com/popunder.js" />        ║
-        ║                                                       ║
-        ║  Example — Native ad:                                 ║
-        ║  <div id="{slot}" />                                  ║
-        ║  <script>                                             ║
-        ║    adNetwork.render({{ id: "{slot}", type: "native" }})║
-        ║  </script>                                            ║
+        ║  Example — Adsterra:                                 ║
+        ║  <div id="{slot}">                                    ║
+        ║    <script src="//ad-network.com/tag.js" />          ║
+        ║  </div>                                               ║
         ╚═══════════════════════════════════════════════════════╝
       */}
       <div className="flex h-full w-full items-center justify-center p-4">
@@ -452,5 +547,3 @@ function PopupAdSlot({
     </div>
   );
 }
-
-

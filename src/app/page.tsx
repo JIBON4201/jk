@@ -32,9 +32,9 @@ import {
 } from "@/components/ui/accordion";
 import { AdBanner, InContentAd, MobileStickyAd } from "@/components/ad-components";
 import { WatchNowPopup } from "@/components/watch-now-popup";
+import { useAdMonetization } from "@/hooks/use-ad-monetization";
 
-// Replace this URL with your actual affiliate/redirect URL
-const REDIRECT_URL = "https://example.com/redirect";
+// Ad network smartlink URL is now configured in src/lib/ad-config.ts
 const SITE_NAME = "VaultStream";
 const SITE_URL = "https://vaultstream.com";
 
@@ -349,6 +349,9 @@ export default function Home() {
   const [popupOpen, setPopupOpen] = useState(false);
   const [popupKey, setPopupKey] = useState(0);
 
+  // Initialize ad monetization (popunder on first click, push on scroll)
+  const { triggerSmartlinkRedirect } = useAdMonetization();
+
   const openPopup = useCallback(() => {
     setPopupKey((k) => k + 1);
     setPopupOpen(true);
@@ -358,7 +361,7 @@ export default function Home() {
   return (
     <>
     {/* ── Watch Now Popup ── */}
-    <WatchNowPopup key={popupKey} open={popupOpen} onClose={closePopup} redirectUrl={REDIRECT_URL} />
+    <WatchNowPopup key={popupKey} open={popupOpen} onClose={closePopup} />
     <div className="noise-overlay relative min-h-screen overflow-x-hidden">
       {/* JSON-LD Structured Data */}
       <JsonLd />
