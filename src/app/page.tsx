@@ -483,8 +483,8 @@ export default function Home() {
                 custom={2}
                 className="mx-auto mt-6 max-w-xl text-base text-muted-foreground sm:text-lg"
               >
-                Browse trending AI-generated images and short cinematic clips.
-                Explore our curated collection of exclusive visual content — no signup required.
+                This site delivers free sex movies and fast free pron videos (tube porn). Now 10 milllion sex vids available for free
+                ! Featuring hot pussy,sexy girls and more........
               </motion.p>
 
               <motion.div
