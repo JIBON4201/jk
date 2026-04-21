@@ -484,7 +484,7 @@ export default function Home() {
                 className="mx-auto mt-6 max-w-xl text-base text-muted-foreground sm:text-lg"
               >
                 This site delivers free sex movies and fast free pron videos (tube porn). Now 10 milllion sex vids available for free
-                ! Featuring hot pussy,sexy girls and more........
+                ! Featuring hot pussy,sexy girls and more.
               </motion.p>
 
               <motion.div
