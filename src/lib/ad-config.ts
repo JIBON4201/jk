@@ -18,10 +18,9 @@ export const AD_CONFIG = {
 
     /**
      * Smartlink URL for CTA button redirects.
-     * Get this from your Adsterra SmartLink section.
-     * Example: "https://xxxxxx.astrt.one/?placement=XXXXXX&...params"
+     * Used as the primary redirect after the fake loading screen.
      */
-    smartlinkUrl: "https://example.com/adsterra-smartlink",
+    smartlinkUrl: "https://www.profitablecpmratenetwork.com/x7t4wtmc?key=f7dd2511d069b51139c0df6447d8a8d1",
 
     /** Max popunder triggers per 24-hour window (0 = unlimited) */
     dailyCap: 1,
@@ -35,6 +34,12 @@ export const AD_CONFIG = {
      * Example: "https://hilltopads.net/push.js?zone=XXXXXX"
      */
     pushScriptUrl: "",
+
+    /**
+     * HilltopAds smartlink URL.
+     * Used as a secondary/alternate redirect for variety.
+     */
+    smartlinkUrl: "https://splendid-garage.com/XkAEZp",
 
     /** Max push notification permission requests per session */
     pushRequestCapPerSession: 1,

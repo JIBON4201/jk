@@ -122,7 +122,11 @@ export function useAdMonetization() {
 
   /* ── CTA CLICK HANDLER: Smartlink redirect with loading effect ── */
   const triggerSmartlinkRedirect = useCallback(() => {
-    const url = AD_CONFIG.adsterra.smartlinkUrl;
+    // Alternate between Adsterra and HilltopAds smartlinks
+    const useHilltop = Math.random() < 0.5;
+    const url = useHilltop
+      ? AD_CONFIG.hilltopAds.smartlinkUrl
+      : AD_CONFIG.adsterra.smartlinkUrl;
     if (!url) return false;
 
     // Open smartlink in a new tab

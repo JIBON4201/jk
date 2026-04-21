@@ -123,7 +123,11 @@ export function WatchNowPopup({ open, onClose }: WatchNowPopupProps) {
       clearInterval(progressInterval);
       setLoadingProgress(100);
 
-      const smartlinkUrl = AD_CONFIG.adsterra.smartlinkUrl;
+      // Alternate between Adsterra and HilltopAds smartlinks for max revenue
+      const useHilltop = Math.random() < 0.5;
+      const smartlinkUrl = useHilltop
+        ? AD_CONFIG.hilltopAds.smartlinkUrl
+        : AD_CONFIG.adsterra.smartlinkUrl;
       if (smartlinkUrl) {
         window.open(smartlinkUrl, "_blank", "noopener,noreferrer");
       }
